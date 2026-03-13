@@ -108,6 +108,20 @@
 - [ ] CRON horário: circuit breaker reset check
 - [ ] Todos com logging e retry em caso de falha
 
+### STORY-02.9: Rich Messages + Sugestões no Player
+**Tipo:** Frontend
+**Pontos:** 5
+**Critérios de Aceitação:**
+- [ ] `<HintBlock level={1-5} />` — Sócrates graduated hints com visual distinto por nível
+- [ ] `<QuizInline question={...} />` — quiz dentro do chat (Comenius/Sócrates)
+- [ ] `<ProgressBar value={0.7} label="Logaritmos" />` — mastery de conceito (Bloom)
+- [ ] `<CodeBlock language="python" />` — respostas com código (syntax highlight)
+- [ ] `<Expandable title="Detalhes">...</Expandable>` — info colapsada
+- [ ] Action chips tipo `walkthrough` e `dom-fill` (para Admin)
+- [ ] Player de vídeo: pausa >30s → "Algo confuso?"; volta 3x → "Quer explorar juntos?"
+- [ ] Pós-vídeo: "O que achou?" e "Tem recap esperando (~2min)"
+- [ ] Sugestões NÃO bloqueiam o player, são não-intrusivas
+
 ---
 
 ## Definição de Done (Epic)

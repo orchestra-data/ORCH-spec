@@ -72,19 +72,30 @@
 - [ ] `check_company_ai_quota()` chamado antes de cada Gemini call
 - [ ] Frontend trata 429 com mensagem amigável ("Limite de conversas atingido hoje")
 
-### STORY-01.7: Frontend — Upgrade AIChatTab
+### STORY-01.7: Frontend — Upgrade AIChatTab (CommunicationHub)
 **Tipo:** Frontend
-**Pontos:** 3
+**Pontos:** 5
 **Critérios de Aceitação:**
+- [ ] Funciona no mesmo botão do CommunicationHub que já existe hoje
 - [ ] Carrega histórico ao montar (`GET /orch-ava/conversations`)
 - [ ] Envia mensagens via `POST /orch-ava/chat`
-- [ ] Recebe SSE (streaming token-by-token)
-- [ ] Status hints durante processamento ("Buscando contexto...", "Analisando...", "Respondendo...")
+- [ ] SSE streaming: `res.setHeader('Content-Type', 'text/event-stream')`, token por token com cursor animado
+- [ ] 3 fases visíveis: searching → thinking → responding
+- [ ] Status hints: "Buscando contexto sobre logaritmos...", "Analisando...", "Respondendo..."
+- [ ] Graceful degradation: se SSE falha, fallback para resposta completa
+- [ ] Personalidade ORCH nos system prompts: curioso, paciente, direto, bem-humorado, honesto
+- [ ] Variações por contexto: primeira msg do dia, acerto, erro, frustração
+- [ ] Action chips (2-3 por resposta, NUNCA mais que 3): tipo `message`, `link`
+- [ ] Chips desaparecem após nova mensagem
 
 ---
 
 ## Definição de Done (Epic)
-- [ ] Aluno conversa com Hub, Hub roteia para Sócrates (único agente ativo)
+- [ ] Aluno conversa com Hub no CommunicationHub (mesmo botão de hoje)
+- [ ] Hub roteia para Sócrates (único agente ativo)
+- [ ] Streaming fluido com status hints e cursor animado
+- [ ] Personalidade ORCH consistente
+- [ ] Action chips funcionais
 - [ ] Perfil Bourdieu criado automaticamente no primeiro chat
 - [ ] Conversas persistidas em `ai_conversation`
 - [ ] Quota ativa e respeitada
