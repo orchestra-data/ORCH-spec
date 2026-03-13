@@ -1,0 +1,50 @@
+---
+title: "Linking an Assistant to a Phone Number"
+description: "Learn how to link an assistant to a phone number in Cogfy Messenger"
+---
+
+To link an assistant to a phone number, you need to define rules that determine which assistant will be used for specific conversations. These rules allow you to automate the assignment of assistants based on contact information, message type, tags, and other properties.
+
+### Managing Assistant Rules
+
+<Steps>
+   <Step title="Access the Assistant Rules Form">
+      Navigate to the phone number settings and open the Assistant Rules section.
+
+      <img src="/images/phone-number-settings.png" alt="Screenshot of the phone number settings." style={{ borderRadius: '0.5rem' }} />
+   </Step>
+   <Step title="Add a Rule">
+      Click the "Add rule" button to create a new rule. You can choose to add the rule at the beginning or end of the list.
+
+      <img src="/images/add-phone-rule.png" alt="Screenshot of the add phone rule button." style={{ borderRadius: '0.5rem' }} />
+   </Step>
+   <Step title="Configure Rule Conditions">
+      Use the condition editor to specify criteria such as contact name, email, occupation, tags, message type, and more. You can combine multiple conditions using logical operators.
+   </Step>
+   <Step title="Select an Assistant">
+      For each rule, select the assistant to be used when the conditions are met. Assistants are listed by name; if an assistant does not have a name, it will appear as "Unnamed Assistant."
+   </Step>
+   <Step title="Save Changes">
+      After configuring your rules and selecting assistants, save your changes. The system will automatically apply the rules to incoming conversations.
+
+      <img src="/images/confirm-phone-number-rule.png" alt="Screenshot of the confirm phone number rule button." style={{ borderRadius: '0.5rem' }} />
+   </Step>
+</Steps>
+<Info>
+  The example above shows how to link an assistant to a phone number. When user have "example" tag, the "Example Assistant" will be assigned to the conversation. If no rules match, the default assistant for the phone number will be used.
+</Info>
+
+
+### Rule Priority
+
+Rules are evaluated in order. The first rule that matches the conversation will determine which assistant is assigned. You can reorder rules by adding them to the top or bottom of the list.
+
+### Managing Rules
+
+- **Edit Conditions:** Modify the conditions for each rule to fine-tune when an assistant should be used.
+- **Delete Rules:** Remove rules that are no longer needed.
+- **Tags and Message Types:** Use tags and message types to create more specific rules for your workflow.
+
+---
+
+This process helps ensure that conversations are routed to the most appropriate assistant, improving efficiency and user experience.

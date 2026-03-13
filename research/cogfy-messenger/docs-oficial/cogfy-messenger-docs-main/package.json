@@ -1,0 +1,19 @@
+{
+  "name": "cogfy-messenger-docs",
+  "version": "1.0.0",
+  "description": "Use the starter kit to get your docs deployed and ready to customize.",
+  "homepage": "https://github.com/IndigoHive/cogfy-messenger-docs#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IndigoHive/cogfy-messenger-docs.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "scripts": {
+    "dev": "mint dev",
+    "update": "mint update"
+  },
+  "devDependencies": {
+    "mint": "^4.2.204"
+  }
+}

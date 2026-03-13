@@ -1,0 +1,20 @@
+---
+title: "Usage"
+description: "Monitor and analyze your Cogfy Messenger workspace usage"
+---
+
+Cogfy Messenger uses an intelligent event-based system to track message consumption within each workspace. Every time a message is sent by an assistant, the platform evaluates whether that message should count toward the workspace’s usage. **Broadcast messages always increment usage**, while **regular assistant replies are counted only once per conversation per day**, ensuring fair and accurate billing.
+
+When a message qualifies to be counted, the workspace’s active subscription is updated and one credit is consumed. This mechanism ensures precise tracking of assistant activity, prevents duplicate counting within the same conversation, and keeps each workspace’s consumption aligned with real user interactions.
+
+### Subscription
+
+Each Cogfy Messenger workspace is associated with a subscription plan that defines the number of credits available for message consumption. Workspace administrators can monitor their current usage and remaining credits through the workspace settings page.
+
+> Check available subscription plans and pricing at [messenger.cogfy.com/:WORKSPACE/settings/billing](https://messenger.cogfy.com/:WORKSPACE/settings/billing).
+
+### No credits left
+
+If a workspace exhausts its allocated credits, the assistants within that workspace will automatically be paused. This means they will no longer respond to incoming messages until additional credits are purchased or the subscription is renewed. This safeguard helps manage usage effectively and prevents unexpected overages.
+
+<img src="/images/no-credits-left.png" alt="Screenshot of the No Credits Left state in sidebar." style={{ borderRadius: '0.5rem' }} />

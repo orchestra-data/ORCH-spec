@@ -1,0 +1,193 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Cogfy Messenger",
+  "colors": {
+    "primary": "#42B62B",
+    "light": "#369B22",
+    "dark": "#3CDD5C"
+  },
+  "favicon": "/favicon.ico",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "index",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Fundamentals",
+            "pages": [
+              "guide/fundamentals/overview",
+              "guide/fundamentals/members",
+              "guide/fundamentals/tags",
+              "guide/fundamentals/api-keys",
+              "guide/fundamentals/contacts",
+              "guide/fundamentals/analytics",
+              "guide/fundamentals/usage"
+            ]
+          },
+          {
+            "group": "Phone numbers",
+            "pages": [
+              "guide/phone-numbers/connect-phone-number",
+              "guide/phone-numbers/phone-number-conversations",
+              "guide/phone-numbers/whatsapp-phone-profile-settings"
+            ]
+          },
+          {
+            "group": "Engines",
+            "pages": [
+              "guide/engines/overview",
+              "guide/engines/workflow",
+              "guide/engines/cogs",
+              "guide/engines/engine-assistants"
+            ]
+          },
+          {
+            "group": "Assistants",
+            "pages": [
+              "guide/assistants/overview",
+              "guide/assistants/creating-an-assistant",
+              "guide/assistants/plugins",
+              "guide/assistants/link-assistant-to-phone-number"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              {
+                "group": "Broadcasts",
+                "expanded": true,
+                "pages": [
+                  "api-reference/endpoint/broadcasts/create",
+                  "api-reference/endpoint/broadcasts/list",
+                  "api-reference/endpoint/broadcasts/get-by-id",
+                  "api-reference/endpoint/broadcasts/send"
+                ]
+              },
+              {
+                "group": "Conversations",
+                "expanded": true,
+                "pages": [
+                  "api-reference/endpoint/conversations/get",
+                  "api-reference/endpoint/conversations/get-by-id",
+                  "api-reference/endpoint/conversations/send-message",
+                  "api-reference/endpoint/conversations/get-messages"
+                ]
+              },
+              {
+                "group": "Contacts",
+                "expanded": true,
+                "pages": [
+                  "api-reference/endpoint/contacts/create",
+                  "api-reference/endpoint/contacts/delete",
+                  "api-reference/endpoint/contacts/get-by-id",
+                  "api-reference/endpoint/contacts/update-by-id",
+                  "api-reference/endpoint/contacts/get"
+                ]
+              },
+              {
+                "group": "Embeddings",
+                "expanded": true,
+                "pages": [
+                  "api-reference/endpoint/embeddings/delete",
+                  "api-reference/endpoint/embeddings/get-by-id",
+                  "api-reference/endpoint/embeddings/create",
+                  "api-reference/endpoint/embeddings/get-from-source",
+                  "api-reference/endpoint/embeddings/create-question-and-answers"
+                ]
+              },
+              {
+                "group": "Messages",
+                "expanded": true,
+                "pages": [
+                  "api-reference/endpoint/messages/send-audio",
+                  "api-reference/endpoint/messages/send-contacts",
+                  "api-reference/endpoint/messages/send-document",
+                  "api-reference/endpoint/messages/send-image",
+                  "api-reference/endpoint/messages/send-interactive-button",
+                  "api-reference/endpoint/messages/send-interactive-cta-url",
+                  "api-reference/endpoint/messages/send-interactive-flow",
+                  "api-reference/endpoint/messages/send-interactive-list",
+                  "api-reference/endpoint/messages/send-interactive-order-details",
+                  "api-reference/endpoint/messages/send-interactive-order-status",
+                  "api-reference/endpoint/messages/send-location",
+                  "api-reference/endpoint/messages/send-reaction",
+                  "api-reference/endpoint/messages/send-sticker",
+                  "api-reference/endpoint/messages/send-template",
+                  "api-reference/endpoint/messages/send-text",
+                  "api-reference/endpoint/messages/send-video"
+                ]
+              },
+              {
+                "group": "Tags",
+                "expanded": true,
+                "pages": [
+                  "api-reference/endpoint/tags/create",
+                  "api-reference/endpoint/tags/get",
+                  "api-reference/endpoint/tags/delete",
+                  "api-reference/endpoint/tags/update-by-id",
+                  "api-reference/endpoint/tags/get-by-id"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Cogfy Messenger",
+          "href": "https://cogfy.com/messenger",
+          "icon": "link"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/Dark.svg",
+    "dark": "/logo/Light.svg"
+  },
+  "navbar": {},
+  "contextual": {
+    "options": [
+     "copy",
+     "view",
+     "chatgpt",
+     "claude",
+     "perplexity",
+     "mcp",
+     "cursor",
+     "vscode"
+   ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/mintlify",
+      "github": "https://github.com/mintlify",
+      "linkedin": "https://linkedin.com/company/mintlify"
+    }
+  },
+  "api": {
+    "openapi": "api-reference/openapi.json"
+  }
+}

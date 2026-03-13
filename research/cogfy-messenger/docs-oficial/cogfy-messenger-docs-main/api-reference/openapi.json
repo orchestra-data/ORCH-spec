@@ -1,0 +1,3515 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Cogfy Messenger Public API",
+    "version": "1.0.0",
+    "description": "API for interacting with the Cogfy Messenger platform"
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "api-key"
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://messenger-public-api.cogfy.com",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:53981",
+      "description": "Local server"
+    }
+  ],
+  "paths": {
+    "/broadcasts": {
+      "post": {
+        "summary": "Create a new broadcast",
+        "description": "Creates a new broadcast with the specified phone number and contacts query.",
+        "tags": [
+          "Broadcasts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text"
+                    ],
+                    "description": "The type of the broadcast message."
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "The title of the broadcast message."
+                  },
+                  "content": {
+                    "type": "string",
+                    "maxLength": 1024,
+                    "description": "The content of the broadcast message."
+                  },
+                  "phoneNumberId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The ID of the phone number to use for the broadcast."
+                  },
+                  "contactsQuery": {
+                    "type": "object",
+                    "properties": {
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "The tags to filter contacts for the broadcast."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Broadcast created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "The ID of the created broadcast."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request, invalid input data"
+          },
+          "404": {
+            "description": "Phone number not found"
+          }
+        }
+      },
+      "get": {
+        "summary": "List all broadcasts",
+        "tags": [
+          "Broadcasts"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of broadcasts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "sent"
+                            ]
+                          },
+                          "createDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/broadcasts/{broadcastId}": {
+      "get": {
+        "summary": "Get a broadcast by ID",
+        "tags": [
+          "Broadcasts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "broadcastId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Broadcast details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "sent"
+                      ]
+                    },
+                    "createDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/broadcasts/{broadcastId}/send": {
+      "post": {
+        "summary": "Send a broadcast by ID",
+        "tags": [
+          "Broadcasts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "broadcastId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Broadcast sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Broadcast sent successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chunks/{chunkId}": {
+      "delete": {
+        "summary": "Delete a chunk by ID",
+        "description": "Deletes a chunk with the specified ID.",
+        "tags": [
+          "Embeddings"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chunkId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chunk deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Chunk not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Chunk not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a chunk by ID",
+        "tags": [
+          "Embeddings"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chunkId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An embedding chunk",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "workspaceId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "sourceType": {
+                      "type": "string"
+                    },
+                    "sourceId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "provider": {
+                      "type": "string"
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "embedding": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "metadata": {
+                      "type": "string"
+                    },
+                    "createDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts": {
+      "post": {
+        "summary": "Create a new contact",
+        "description": "Creates a new contact with the specified details.",
+        "tags": [
+          "Contacts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "waProfileName": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "occupation": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": "string"
+                  },
+                  "birthdate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "age": {
+                    "type": "integer"
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "customProperties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "description": "Custom properties associated with the contact",
+                    "example": {
+                      "Favorite Color": "Blue"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contact created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts/{contactId}": {
+      "delete": {
+        "summary": "Delete a contact by ID",
+        "description": "Deletes a contact with the specified ID.",
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contactId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "The ID of the deleted contact."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contact not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Contact not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a contact by ID",
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contactId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "workspaceId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "statusId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "waId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "waProfileName": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "firstName": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "lastName": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "nullable": true
+                    },
+                    "phone": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "occupation": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "gender": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "birthDate": {
+                      "type": "string",
+                      "format": "date",
+                      "nullable": true
+                    },
+                    "age": {
+                      "type": "integer",
+                      "nullable": true
+                    },
+                    "notes": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "createDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updateDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "customProperties": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Custom properties associated with the contact",
+                      "example": {
+                        "Favorite Color": "Blue"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update a contact by ID",
+        "description": "Updates a specified contact.",
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contactId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "occupation": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": "string"
+                  },
+                  "birthdate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "age": {
+                    "type": "integer"
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "customProperties": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "description": "Custom properties associated with the contact",
+                    "example": {
+                      "Favorite Color": "Blue"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contact not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating the contact was not found."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contacts/": {
+      "get": {
+        "summary": "Get all contacts",
+        "tags": [
+          "Contacts"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Cursor for pagination"
+          },
+          {
+            "in": "query",
+            "name": "waId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Query to filter contacts by waId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of contacts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "workspaceId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "statusId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "nullable": true
+                          },
+                          "waId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "waProfileName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "firstName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "lastName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "email": {
+                            "type": "string",
+                            "format": "email",
+                            "nullable": true
+                          },
+                          "phone": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "occupation": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "gender": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "birthDate": {
+                            "type": "string",
+                            "format": "date",
+                            "nullable": true
+                          },
+                          "age": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "notes": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updateDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "customProperties": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            },
+                            "description": "Custom properties associated with the contact",
+                            "example": {
+                              "Favorite Color": "Blue"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "cursors": {
+                      "type": "object",
+                      "properties": {
+                        "next": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Cursor for the next page"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/{conversationId}": {
+      "get": {
+        "summary": "Get a conversation by ID",
+        "tags": [
+          "Conversations"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversationId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A contact",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "workspaceId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "phoneNumberId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "recipientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "assigneeId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lastMessageId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "createDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "serviceWindowExpireDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/:conversationId/messages": {
+      "get": {
+        "summary": "Get all messages in a conversation",
+        "tags": [
+          "Conversations"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Cursor for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "workspaceId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "conversationId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "assistantId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "broadcastId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "whatsappMessageId": {
+                            "type": "string"
+                          },
+                          "from": {
+                            "type": "string"
+                          },
+                          "to": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "contentData": {
+                            "type": "object"
+                          },
+                          "toolCallId": {
+                            "type": "string"
+                          },
+                          "toolCalls": {
+                            "type": "string"
+                          },
+                          "data": {
+                            "type": "string"
+                          },
+                          "contextId": {
+                            "type": "string"
+                          },
+                          "contextFrom": {
+                            "type": "string"
+                          },
+                          "createDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "sendDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "deliverDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "readDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "promptTokens": {
+                            "type": "string"
+                          },
+                          "completionTokens": {
+                            "type": "string"
+                          },
+                          "order": {
+                            "type": "number"
+                          },
+                          "traceId": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "cursors": {
+                      "type": "object",
+                      "properties": {
+                        "next": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Cursor for newer messages"
+                        },
+                        "prev": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Cursor for older messages"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/": {
+      "get": {
+        "summary": "Get all conversations",
+        "tags": [
+          "Conversations"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Cursor for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of conversations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "workspaceId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "phoneNumberId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "recipientId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "assigneeId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "lastMessageId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "createDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "serviceWindowExpireDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "cursors": {
+                      "type": "object",
+                      "properties": {
+                        "next": {
+                          "type": "string",
+                          "nullable": true,
+                          "description": "Cursor for the next page"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/{conversationId}/messages": {
+      "post": {
+        "summary": "Send a message to a conversation",
+        "tags": [
+          "Conversations"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversationId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "Conversation ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "Message content. Required for text messages, optional for media messages."
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "text",
+                      "image",
+                      "document"
+                    ],
+                    "description": "Message type"
+                  },
+                  "media": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "Media file name. Optional."
+                      },
+                      "mimeType": {
+                        "type": "string",
+                        "description": "Media MIME type. Required for media messages."
+                      },
+                      "base64": {
+                        "type": "string",
+                        "description": "Media file content in base64 encoding. Required for media messages."
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "Message ID"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Conversation not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/messages/audio": {
+      "post": {
+        "summary": "Send audio message",
+        "description": "Sends an audio message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "audio": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audio message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/contacts": {
+      "post": {
+        "summary": "Send a contact message",
+        "description": "Sends a contact message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to",
+                  "contacts"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "contacts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "object",
+                          "required": [
+                            "formatted_name"
+                          ],
+                          "properties": {
+                            "formatted_name": {
+                              "type": "string"
+                            },
+                            "first_name": {
+                              "type": "string"
+                            },
+                            "last_name": {
+                              "type": "string"
+                            },
+                            "middle_name": {
+                              "type": "string"
+                            },
+                            "suffix": {
+                              "type": "string"
+                            },
+                            "prefix": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "phones": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "phone"
+                            ],
+                            "properties": {
+                              "phone": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              },
+                              "wa_id": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "addresses": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "street": {
+                                "type": "string"
+                              },
+                              "city": {
+                                "type": "string"
+                              },
+                              "state": {
+                                "type": "string"
+                              },
+                              "zip": {
+                                "type": "string"
+                              },
+                              "country": {
+                                "type": "string"
+                              },
+                              "country_code": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "birthday": {
+                          "type": "string"
+                        },
+                        "emails": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "email": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "org": {
+                          "type": "object",
+                          "properties": {
+                            "company": {
+                              "type": "string"
+                            },
+                            "department": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "urls": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audio message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/document": {
+      "post": {
+        "summary": "Send document message",
+        "description": "Sends a document message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "from",
+                  "to",
+                  "document"
+                ],
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "document": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "caption": {
+                        "type": "string"
+                      },
+                      "filename": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audio message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/image": {
+      "post": {
+        "summary": "Send image message",
+        "description": "Sends an image message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to",
+                  "image"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "image": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "caption": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/interactive/button": {
+      "post": {
+        "summary": "Send interactive button message",
+        "description": "Sends an interactive button message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to",
+                  "interactive"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "interactive": {
+                    "type": "object",
+                    "required": [
+                      "body",
+                      "action"
+                    ],
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "button"
+                        ],
+                        "default": "button"
+                      },
+                      "header": {
+                        "type": "object",
+                        "required": [
+                          "type"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "image",
+                              "video",
+                              "document"
+                            ]
+                          },
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "body": {
+                        "type": "object",
+                        "required": [
+                          "text"
+                        ],
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "footer": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "action": {
+                        "type": "object",
+                        "properties": {
+                          "buttons": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 3,
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "type",
+                                "reply"
+                              ],
+                              "properties": {
+                                "type": {
+                                  "type": "string"
+                                },
+                                "reply": {
+                                  "type": "object",
+                                  "required": [
+                                    "id",
+                                    "title"
+                                  ],
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "title": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/interactive/cta_url": {
+      "post": {
+        "summary": "Send interactive CTA URL message",
+        "description": "Sends an interactive call-to-action message with URL to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "interactive": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "cta_url"
+                        ],
+                        "default": "cta_url"
+                      },
+                      "header": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "image",
+                              "video",
+                              "document"
+                            ]
+                          },
+                          "text": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        }
+                      },
+                      "body": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "footer": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "action": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "enum": [
+                              "cta_url"
+                            ],
+                            "default": "cta_url"
+                          },
+                          "parameters": {
+                            "type": "object",
+                            "properties": {
+                              "display_text": {
+                                "type": "string"
+                              },
+                              "url": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Interactive message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/interactive/flow": {
+      "post": {
+        "summary": "Send interactive Flow message",
+        "description": "Sends an interactive Flow message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "interactive": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "flow"
+                        ],
+                        "default": "flow"
+                      },
+                      "header": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "image",
+                              "video",
+                              "document"
+                            ]
+                          }
+                        }
+                      },
+                      "body": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "footer": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "action": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "enum": [
+                              "flow"
+                            ],
+                            "default": "flow"
+                          },
+                          "parameters": {
+                            "type": "object",
+                            "properties": {
+                              "flow_cta": {
+                                "type": "string"
+                              },
+                              "flow_name": {
+                                "type": "string"
+                              },
+                              "flow_message_version": {
+                                "type": "integer",
+                                "default": 3
+                              },
+                              "flow_action": {
+                                "type": "string",
+                                "enum": [
+                                  "navigate",
+                                  "data_exchange"
+                                ],
+                                "default": "navigate"
+                              },
+                              "flow_action_payload": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Interactive Flow message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/interactive/list": {
+      "post": {
+        "summary": "Send interactive list message",
+        "description": "Sends an interactive list message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to",
+                  "interactive"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "interactive": {
+                    "type": "object",
+                    "required": [
+                      "body",
+                      "action"
+                    ],
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "list"
+                        ],
+                        "default": "list"
+                      },
+                      "header": {
+                        "type": "object",
+                        "required": [
+                          "type"
+                        ],
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "text"
+                            ]
+                          }
+                        }
+                      },
+                      "body": {
+                        "type": "object",
+                        "required": [
+                          "text"
+                        ],
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "footer": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "action": {
+                        "type": "object",
+                        "required": [
+                          "button",
+                          "sections"
+                        ],
+                        "properties": {
+                          "button": {
+                            "type": "string"
+                          },
+                          "sections": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 10,
+                            "items": {
+                              "type": "object",
+                              "required": [
+                                "title",
+                                "rows"
+                              ],
+                              "properties": {
+                                "title": {
+                                  "type": "string",
+                                  "maxLength": 24
+                                },
+                                "rows": {
+                                  "type": "array",
+                                  "minItems": 1,
+                                  "maxItems": 10,
+                                  "items": {
+                                    "type": "object",
+                                    "required": [
+                                      "id",
+                                      "title"
+                                    ],
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "maxLength": 24
+                                      },
+                                      "description": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Interactive Flow message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/interactive/order_details": {
+      "post": {
+        "summary": "Send interactive order details message",
+        "description": "Sends an interactive order details message for review and payment. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "interactive": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "order_details"
+                        ],
+                        "default": "order_details"
+                      },
+                      "header": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "image"
+                            ]
+                          }
+                        }
+                      },
+                      "body": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 1024
+                          }
+                        }
+                      },
+                      "footer": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "text": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "action": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "enum": [
+                              "review_and_pay"
+                            ],
+                            "default": "review_and_pay"
+                          },
+                          "parameters": {
+                            "type": "object",
+                            "properties": {
+                              "reference_id": {
+                                "type": "string",
+                                "maxLength": 35
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "digital-goods",
+                                  "physical-goods"
+                                ]
+                              },
+                              "payment_type": {
+                                "type": "string",
+                                "enum": [
+                                  "br"
+                                ],
+                                "default": "br"
+                              },
+                              "payment_settings": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "pix_dynamic_code",
+                                        "payment_link",
+                                        "boleto"
+                                      ]
+                                    },
+                                    "pix_dynamic_code": {
+                                      "type": "object",
+                                      "nullable": true,
+                                      "properties": {
+                                        "code": {
+                                          "type": "string"
+                                        },
+                                        "merchant_name": {
+                                          "type": "string"
+                                        },
+                                        "key": {
+                                          "type": "string"
+                                        },
+                                        "key_type": {
+                                          "type": "string",
+                                          "enum": [
+                                            "CPF",
+                                            "CNPJ",
+                                            "EMAIL",
+                                            "PHONE",
+                                            "EVP"
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    "payment_link": {
+                                      "type": "object",
+                                      "nullable": true,
+                                      "properties": {
+                                        "uri": {
+                                          "type": "string",
+                                          "format": "uri"
+                                        }
+                                      }
+                                    },
+                                    "boleto": {
+                                      "type": "object",
+                                      "nullable": true,
+                                      "properties": {
+                                        "digitable_line": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "currency": {
+                                "type": "string",
+                                "enum": [
+                                  "BRL"
+                                ],
+                                "default": "BRL"
+                              },
+                              "total_amount": {
+                                "type": "object",
+                                "properties": {
+                                  "value": {
+                                    "type": "integer"
+                                  },
+                                  "offset": {
+                                    "type": "integer",
+                                    "minimum": 100,
+                                    "maximum": 100,
+                                    "default": 100
+                                  },
+                                  "description": {
+                                    "type": "string",
+                                    "maxLength": 60,
+                                    "nullable": true
+                                  }
+                                }
+                              },
+                              "order": {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending"
+                                    ],
+                                    "default": "pending"
+                                  },
+                                  "catalog_id": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "expiration": {
+                                    "type": "object",
+                                    "nullable": true,
+                                    "properties": {
+                                      "timestamp": {
+                                        "type": "string"
+                                      },
+                                      "description": {
+                                        "type": "string",
+                                        "maxLength": 300
+                                      }
+                                    }
+                                  },
+                                  "items": {
+                                    "type": "array",
+                                    "minItems": 1,
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "retailer_id": {
+                                          "type": "string"
+                                        },
+                                        "name": {
+                                          "type": "string"
+                                        },
+                                        "amount": {
+                                          "type": "object",
+                                          "properties": {
+                                            "value": {
+                                              "type": "integer"
+                                            },
+                                            "offset": {
+                                              "type": "integer",
+                                              "minimum": 100,
+                                              "maximum": 100,
+                                              "default": 100
+                                            },
+                                            "description": {
+                                              "type": "string",
+                                              "maxLength": 60,
+                                              "nullable": true
+                                            }
+                                          }
+                                        },
+                                        "quantity": {
+                                          "type": "integer"
+                                        },
+                                        "sale_amount": {
+                                          "type": "object",
+                                          "nullable": true,
+                                          "properties": {
+                                            "value": {
+                                              "type": "integer"
+                                            },
+                                            "offset": {
+                                              "type": "integer",
+                                              "minimum": 100,
+                                              "maximum": 100,
+                                              "default": 100
+                                            },
+                                            "description": {
+                                              "type": "string",
+                                              "maxLength": 60,
+                                              "nullable": true
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "subtotal": {
+                                    "type": "object",
+                                    "properties": {
+                                      "value": {
+                                        "type": "integer"
+                                      },
+                                      "offset": {
+                                        "type": "integer",
+                                        "minimum": 100,
+                                        "maximum": 100,
+                                        "default": 100
+                                      },
+                                      "description": {
+                                        "type": "string",
+                                        "maxLength": 60,
+                                        "nullable": true
+                                      }
+                                    }
+                                  },
+                                  "tax": {
+                                    "type": "object",
+                                    "properties": {
+                                      "value": {
+                                        "type": "integer"
+                                      },
+                                      "offset": {
+                                        "type": "integer",
+                                        "minimum": 100,
+                                        "maximum": 100,
+                                        "default": 100
+                                      },
+                                      "description": {
+                                        "type": "string",
+                                        "maxLength": 60,
+                                        "nullable": true
+                                      }
+                                    }
+                                  },
+                                  "shipping": {
+                                    "type": "object",
+                                    "nullable": true,
+                                    "properties": {
+                                      "value": {
+                                        "type": "integer"
+                                      },
+                                      "offset": {
+                                        "type": "integer",
+                                        "minimum": 100,
+                                        "maximum": 100,
+                                        "default": 100
+                                      },
+                                      "description": {
+                                        "type": "string",
+                                        "maxLength": 60,
+                                        "nullable": true
+                                      }
+                                    }
+                                  },
+                                  "discount": {
+                                    "type": "object",
+                                    "nullable": true,
+                                    "properties": {
+                                      "value": {
+                                        "type": "integer"
+                                      },
+                                      "offset": {
+                                        "type": "integer",
+                                        "minimum": 100,
+                                        "maximum": 100,
+                                        "default": 100
+                                      },
+                                      "description": {
+                                        "type": "string",
+                                        "maxLength": 60,
+                                        "nullable": true
+                                      },
+                                      "discount_program_name": {
+                                        "type": "string",
+                                        "maxLength": 60,
+                                        "nullable": true
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Interactive order details message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/interactive/order_status": {
+      "post": {
+        "summary": "Send interactive order status message",
+        "description": "Sends an interactive order status update message.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "interactive": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "order_status"
+                        ],
+                        "default": "order_status"
+                      },
+                      "header": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "image"
+                            ]
+                          }
+                        }
+                      },
+                      "body": {
+                        "type": "object",
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 1024
+                          }
+                        }
+                      },
+                      "footer": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "maxLength": 60
+                          }
+                        }
+                      },
+                      "action": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "enum": [
+                              "review_order"
+                            ],
+                            "default": "review_order"
+                          },
+                          "parameters": {
+                            "type": "object",
+                            "properties": {
+                              "reference_id": {
+                                "type": "string"
+                              },
+                              "order": {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending",
+                                      "processing",
+                                      "partially-shipped",
+                                      "shipped",
+                                      "completed",
+                                      "canceled"
+                                    ]
+                                  },
+                                  "description": {
+                                    "type": "string",
+                                    "maxLength": 120,
+                                    "nullable": true
+                                  }
+                                }
+                              },
+                              "payment": {
+                                "type": "object",
+                                "nullable": true,
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "pending",
+                                      "captured",
+                                      "failed"
+                                    ]
+                                  },
+                                  "timestamp": {
+                                    "type": "integer",
+                                    "nullable": true
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Interactive order status message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/location": {
+      "post": {
+        "summary": "Send location message",
+        "description": "Sends a location message with coordinates to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "longitude": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "latitude": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "name": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "address": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Location message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/reaction": {
+      "post": {
+        "summary": "Send reaction message",
+        "description": "Sends a reaction message to a specific message. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "reaction": {
+                    "type": "object",
+                    "properties": {
+                      "message_id": {
+                        "type": "string"
+                      },
+                      "emoji": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reaction message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/sticker": {
+      "post": {
+        "summary": "Send sticker message",
+        "description": "Sends a sticker message to a specific message. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "sticker": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sticker message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/template": {
+      "post": {
+        "summary": "Send message template",
+        "description": "Sends an approved message template to a phone number. Each template message sent has an associated cost.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "template": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "language": {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "components": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string"
+                            },
+                            "sub_type": {
+                              "type": "string",
+                              "nullable": true
+                            },
+                            "index": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 2,
+                              "nullable": true
+                            },
+                            "parameters": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/text": {
+      "post": {
+        "summary": "Send text message",
+        "description": "Sends a text message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "object",
+                    "properties": {
+                      "body": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Text message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages/video": {
+      "post": {
+        "summary": "Send video message",
+        "description": "Sends a video message to a phone number. Requires that the recipient has messaged the business in the last 24 hours.",
+        "tags": [
+          "Messages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  },
+                  "video": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "caption": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Video message sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources/{sourceId}/chunks": {
+      "post": {
+        "summary": "Create a new chunk",
+        "description": "Creates a new chunk with the specified details.",
+        "tags": [
+          "Embeddings"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sourceId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "sourceType": {
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "An array containing the IDs of the created chunks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all chunks for a source",
+        "tags": [
+          "Embeddings"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sourceId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The ID of the source to list chunks for"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of chunks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "workspaceId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "sourceType": {
+                            "type": "string"
+                          },
+                          "sourceId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "nullable": true
+                          },
+                          "provider": {
+                            "type": "string"
+                          },
+                          "model": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "createDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources/{sourceId}/questions": {
+      "post": {
+        "summary": "Create questions and answers to feed a knowledge base source",
+        "tags": [
+          "Embeddings"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sourceId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "question": {
+                          "type": "string"
+                        },
+                        "answer": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Questions created"
+          }
+        }
+      }
+    },
+    "/tags": {
+      "post": {
+        "summary": "Create a new tag",
+        "description": "Creates a new tag with the specified name.",
+        "tags": [
+          "Tags"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "The name of the created tag."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tag created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "The ID and name of the created tag."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tag with the specified name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating the tag already exists."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List all tags",
+        "description": "Retrieves a list of all tags in the workspace.",
+        "tags": [
+          "Tags"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of tags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tags/{tagId}": {
+      "delete": {
+        "summary": "Delete a tag by ID",
+        "description": "Deletes a tag with the specified ID.",
+        "tags": [
+          "Tags"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "description": "The ID and name of the deleted tag.",
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tag not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Tag not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get a tag by ID",
+        "description": "Retrieves a tag with the specified ID.",
+        "tags": [
+          "Tags"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "The name of the tag."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tag not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Tag with id {tagId} not found"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update a tag by ID",
+        "description": "Updates the name of a tag with the specified ID.",
+        "tags": [
+          "Tags"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "The new name for the tag."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tag updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "The new name for the tag."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tag not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating the tag was not found."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tag with the specified name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message indicating the tag name already exists."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}
