@@ -1,0 +1,26 @@
+﻿**********************
+Início da transcrição do Windows PowerShell
+Hora de início: 20260325143958
+Nome de Usuário: JARVIS2\steev
+Executar como Usuário: JARVIS2\steev
+Nome da Configuração: 
+Computador: JARVIS2 (Microsoft Windows NT 10.0.26200.0)
+Aplicativo Host: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File C:/Users/steev/.claude/statusline.ps1
+ID do Processo: 9252
+PSVersion: 5.1.26100.7920
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.7920
+BuildVersion: 10.0.26100.7920
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+PS>CommandInvocation(statusline.ps1): "statusline.ps1"
+[Opus 4.6 (1M context)] R$465.07 | 613.5K tokens | 56h2m | ctx: 21%
+PS>$global:?
+True
+**********************
+Fim da transcrição do Windows PowerShell
+Hora de término: 20260325143958
+**********************
