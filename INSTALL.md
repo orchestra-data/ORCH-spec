@@ -14,7 +14,8 @@ O Orch Admin e um assistente IA integrado ao painel do colaborador (admin/coorde
 Usa tool calling com GPT-4o-mini para consultar dados REAIS do sistema via ferramentas seguras (READ ONLY).
 
 **O que esta funcionando e testado:**
-- Chat com LLM + tool calling (7 admin tools + 7 student tools + 1 shared)
+- Chat com LLM + tool calling (10 admin tools + 1 queryData SQL dinamico + 7 student tools + 1 shared)
+- **queryData**: admin pergunta QUALQUER COISA sobre dados e o LLM gera SQL seguro (READ ONLY, tenant-isolated, validated, audited)
 - Markdown rendering no widget (negrito, italico, listas)
 - Tom "nossa instituicao" — Orch faz parte da comunidade escolar
 - Multi-tenant (accessibleCompanyIds)
@@ -76,7 +77,8 @@ cp -r backend/endpoints/orchAdminWalkthroughs       apps/api/src/endpoints/
 cp -r backend/endpoints/orchAdminWalkthroughStart   apps/api/src/endpoints/
 cp -r backend/endpoints/orchAdminWalkthroughComplete apps/api/src/endpoints/
 cp -r backend/endpoints/orchAdminFeedback           apps/api/src/endpoints/
-cp -r backend/endpoints/orchAdminSuggestions        apps/api/src/endpoints/
+cp -r backend/endpoints/orchAdminSuggestions              apps/api/src/endpoints/
+cp -r backend/endpoints/orchAdminConversationMessages     apps/api/src/endpoints/
 ```
 
 Os endpoints sao auto-descobertos pelo `load-endpoints.ts`. NAO precisa registrar.
@@ -151,6 +153,7 @@ Login como admin. Widget Orch no canto inferior direito.
 | `backend/endpoints/orchAdminWalkthroughComplete/` | `apps/api/src/endpoints/orchAdminWalkthroughComplete/` |
 | `backend/endpoints/orchAdminFeedback/` | `apps/api/src/endpoints/orchAdminFeedback/` |
 | `backend/endpoints/orchAdminSuggestions/` | `apps/api/src/endpoints/orchAdminSuggestions/` |
+| `backend/endpoints/orchAdminConversationMessages/` | `apps/api/src/endpoints/orchAdminConversationMessages/` |
 
 ### Backend — Migration (1 arquivo)
 

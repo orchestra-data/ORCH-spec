@@ -246,6 +246,45 @@ Todos os 7 testes passaram com **zero erros** no log da API.
 
 ---
 
+### 6. Tool `queryData` — SQL dinamico seguro (NOVA)
+
+**Adicionada em `admin-tools.ts`:**
+
+| Aspecto | Detalhe |
+|---------|---------|
+| Funcao | Gera SELECT PostgreSQL a partir de linguagem natural |
+| Seguranca | READ ONLY tx + statement_timeout + regex validation + tenant isolation forcado |
+| Schema | 20 tabelas documentadas inline (176 tabelas acessiveis no banco) |
+| Parametros | `sql` (SELECT com $1/$2) + `explanation` (auditoria) |
+| LIMIT | Forcado max 50 rows |
+| Audit log | `[orch_queryData]` com user, explanation, row count |
+
+**Validation rules:**
+- DEVE comecar com SELECT
+- Blocked: INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, TRUNCATE, GRANT, REVOKE, COPY, EXECUTE, CALL
+- Blocked: pg_catalog, information_schema, comentarios, multi-statement (;)
+- DEVE conter $1 (tenant_id)
+- Erros retornam mensagem amigavel (sem leak de internals)
+
+**Exemplos de perguntas que agora funcionam:**
+- "qual aluno tem mais faltas?" → ranking por absent_sessions
+- "correlacao entre presenca e nota" → AVG attendance x AVG score
+- "turmas com evasao acima de 20%" → ratio dropped/total
+- "quantas aulas de video existem?" → COUNT por component_type
+- "evolucao de matriculas por mes" → GROUP BY date_trunc
+- "hierarquia completa do curso X" → collection→pathway→series→unit→component
+
+**Mudanca em `orch-tools-index.ts`:**
+```diff
++    'queryData',
+  ];
+```
+
+**Mudanca em `orch-admin-chat.ts` (system prompt):**
+Adicionado mapeamento: perguntas que nenhuma tool especifica atende → queryData
+
+---
+
 ## COMO TESTAR
 
 ```bash
@@ -257,11 +296,18 @@ bash "C:/Projetos IA/Plataforma Cogedu/localhost/harbor-dev.sh"
 
 # 3. Abrir widget Orch (canto inferior direito)
 
-# 4. Testar perguntas:
+# 4. Testar perguntas basicas (tools especificas):
 # "quantos cursos temos?"
 # "quantos alunos temos e quantos sao do sexo feminino?"
 # "me de os numeros gerais da instituicao"
 # "quais provas tenho que corrigir?"
 # "houve atividade na plataforma nas ultimas 24h?"
 # "o aluno jasexeh e assiduo?"
+
+# 5. Testar perguntas complexas (queryData):
+# "qual aluno tem mais faltas?"
+# "mostra a hierarquia completa do curso Computer Science"
+# "quantas aulas de video temos vs quizzes?"
+# "quais turmas tem taxa de evasao acima de 0%?"
+# "me mostra a correlacao entre presenca e nota dos alunos"
 ```

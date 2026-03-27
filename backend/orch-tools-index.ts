@@ -109,6 +109,7 @@ export function filterToolsByRole(
     'getInstitutionStats',
     'getAccessLogs',
     'getTeacherActivity',
+    'queryData',
   ];
 
   const allowedKeys =

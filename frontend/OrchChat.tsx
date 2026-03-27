@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify';
 import { X, Send, Zap } from 'lucide-react';
 
 import { apiFetch } from '../../client/apiClient';
+import { useTenantStore } from '../../stores/tenantStore';
 
 /** Lightweight markdown → HTML for chat messages. No external deps. */
 function renderMarkdown(text: string): string {
@@ -35,36 +36,84 @@ interface OrchChatProps {
 
 interface OrchChatResponse {
   sessionId: string;
+  conversationId?: string;
   message: string;
+  agentUsed?: string;
   sources: Array<{ file: string; section: string; similarity: number }>;
+  actionChips?: Array<{ label: string; type: string; value: string }>;
   error?: string;
   error_type?: string;
 }
+
+const ORCH_SESSION_KEY = 'orch_admin_session_id';
+const ORCH_AVA_SESSION_KEY = 'orch_ava_conversation_id';
 
 export function OrchChat({ onClose }: OrchChatProps) {
   const [messages, setMessages] = useState<OrchMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    try { return localStorage.getItem(ORCH_SESSION_KEY); } catch { return null; }
+  });
+  const [conversationId, setConversationId] = useState<string | null>(() => {
+    try { return localStorage.getItem(ORCH_AVA_SESSION_KEY); } catch { return null; }
+  });
+  const { userType } = useTenantStore();
+  const isStudent = userType === 'student';
+  const chatEndpoint = isStudent ? '/orch-ava/chat' : '/orch-admin/chat';
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Persist session IDs to localStorage
+  useEffect(() => {
+    try {
+      if (sessionId) localStorage.setItem(ORCH_SESSION_KEY, sessionId);
+      if (conversationId) localStorage.setItem(ORCH_AVA_SESSION_KEY, conversationId);
+    } catch { /* localStorage unavailable */ }
+  }, [sessionId, conversationId]);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Welcome message
+  // Load previous messages if resuming a session, or show welcome
   useEffect(() => {
-    const pageName = getPageName(window.location.pathname);
-    setMessages([
-      {
-        id: 'welcome',
-        role: 'assistant',
-        content: `Oi! Sou o Orch, seu guia do sistema CoGEdu.\n\nVejo que voce esta na pagina **${pageName}**. Posso te ajudar a entender os campos, botoes e funcionalidades dessa tela.\n\nComo posso te ajudar?`,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    const resumeSession = async () => {
+      if (!isStudent && sessionId) {
+        try {
+          const response = await apiFetch<{ messages: Array<{ role: string; content: string; created_at: string }> }>(
+            `/orch-admin/conversations/${sessionId}/messages?limit=10`,
+            { method: 'GET' }
+          );
+          if (response.messages && response.messages.length > 0) {
+            const restored = response.messages.map((m, i) => ({
+              id: `restored-${i}`,
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+              timestamp: m.created_at,
+            }));
+            setMessages(restored);
+            return;
+          }
+        } catch {
+          // Session expired or invalid — start fresh
+          localStorage.removeItem(ORCH_SESSION_KEY);
+          setSessionId(null);
+        }
+      }
+      // Default welcome
+      const pageName = getPageName(window.location.pathname);
+      setMessages([
+        {
+          id: 'welcome',
+          role: 'assistant',
+          content: `Oi! Sou o Orch, seu guia do sistema CoGEdu.\n\nVejo que voce esta na pagina **${pageName}**. Posso te ajudar a entender os campos, botoes e funcionalidades dessa tela.\n\nComo posso te ajudar?`,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+    };
+    resumeSession();
   }, []);
 
   const handleSend = useCallback(async () => {
@@ -82,16 +131,20 @@ export function OrchChat({ onClose }: OrchChatProps) {
     setIsLoading(true);
 
     try {
-      const response = await apiFetch<OrchChatResponse>('/orch-admin/chat', {
+      const body = isStudent
+        ? { message: userMessage.content, pageUrl: window.location.pathname, conversationId }
+        : { message: userMessage.content, sessionId, routeContext: getPageName(window.location.pathname), pageUrl: window.location.pathname };
+
+      const response = await apiFetch<OrchChatResponse>(chatEndpoint, {
         method: 'POST',
-        body: JSON.stringify({
-          message: userMessage.content,
-          sessionId,
-          routeContext: window.location.pathname,
-        }),
+        body: JSON.stringify(body),
       });
 
-      setSessionId(response.sessionId);
+      if (isStudent && response.conversationId) {
+        setConversationId(response.conversationId);
+      } else {
+        setSessionId(response.sessionId);
+      }
 
       const assistantMessage: OrchMessage = {
         id: `assistant-${Date.now()}`,

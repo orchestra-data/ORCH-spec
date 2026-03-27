@@ -4,6 +4,14 @@ import { z } from 'zod';
 import { orchLLMService } from '../orch-llm-service';
 import { orchAdminKnowledge } from './orch-admin-knowledge';
 
+const UserProfile = z.object({
+  fullName: z.string(),
+  firstName: z.string(),
+  gender: z.string().nullable(),
+  roleTitle: z.string().nullable(),
+  userType: z.string(),
+});
+
 const ChatParams = z.object({
   userId: z.string().uuid(),
   tenantId: z.string().uuid(),
@@ -12,6 +20,7 @@ const ChatParams = z.object({
   routeContext: z.string(),
   sessionId: z.string().uuid().optional(),
   tools: z.record(z.any()).optional(),
+  userProfile: UserProfile.optional(),
 });
 type ChatParams = z.infer<typeof ChatParams>;
 
@@ -61,21 +70,29 @@ voce DEVE chamar a ferramenta correspondente IMEDIATAMENTE. NAO diga "nao tenho 
 Chame a ferramenta e reporte os dados reais.
 
 Mapeamento obrigatorio:
-- Quantos cursos, quais cursos, lista cursos → listAllCourses
-- Quantos alunos, lista alunos, filtrar por genero/turma → listAllStudents
+- Quantos cursos, quais cursos, lista cursos, trilhas, disciplinas → listAllCourses
+- Quantos alunos, lista alunos, filtrar por genero/turma/status → listAllStudents
 - Visao geral, numeros da instituicao, dashboard geral → getInstitutionStats
 - Quem acessou, log de acesso, atividade recente → getAccessLogs
 - Provas para corrigir, avaliacoes pendentes → getPendingGrading
 - Comunicacao do professor, mensagens enviadas → getTeacherActivity
 - Dados de um aluno especifico por nome → getStudentInfo
 - Presenca, frequencia, assiduidade de um aluno → getStudentAttendance
-- Notas, provas, avaliacoes, resultados → getMyGrades
-- Estatisticas de turmas, media → getClassStats
-- Metricas de BI, KPIs agregados → getBIMetrics
-- Progresso de alunos → getMyProgress
-- Presenca, faltas, frequencia → getMyAttendance
-- Conteudos de curso → getMyCourseContent
+- Notas, avaliacoes, resultados de um aluno → getStudentInfo
+- Estatisticas de turmas, media, taxa conclusao → getClassStats
+- Metricas de BI, KPIs agregados, analytics → getBIMetrics
 - Buscar conteudo por texto → searchContent
+- QUALQUER OUTRA PERGUNTA sobre dados, correlacoes, rankings, comparacoes, cruzamentos, evolucao temporal, filtros complexos → queryData (gere SELECT PostgreSQL com $1=tenant_id, $2=accessibleCompanyIds)
+
+QUANDO USAR queryData:
+- Perguntas que nenhuma outra tool responde diretamente
+- Rankings ("qual aluno tem mais faltas?", "turma com melhor nota?")
+- Correlacoes ("relacao entre presenca e nota")
+- Evolucao temporal ("matriculas por mes nos ultimos 6 meses")
+- Filtros compostos ("alunos com presenca < 70% E nota < 5")
+- Agregacoes customizadas ("media de notas por turma")
+- Contagens especificas ("quantas aulas de video existem?")
+Prefira as tools especificas quando existirem (sao mais rapidas). Use queryData como fallback universal.
 
 REGRAS CRITICAS DE DADOS:
 - NUNCA invente dados. Use SEMPRE as ferramentas.
@@ -117,11 +134,58 @@ class OrchAdminChat {
         routeContext: validated.routeContext,
         limit: 5,
       });
-    } catch {
-      // RAG search may fail if no embeddings exist yet
+    } catch (err) {
+      console.warn('[orch_admin_rag] RAG search failed (embeddings may not exist yet):', err instanceof Error ? err.message : err);
     }
 
     const history = await this.getRecentHistory(client, sessionId, 10);
+
+    // Resolve user identity for personalized treatment
+    let userIdentityBlock = '';
+    if (params.userProfile) {
+      const p = params.userProfile;
+      const isFemale = p.gender ? /femin|mulher|female|f$/i.test(p.gender) : false;
+      const isMale = p.gender ? /mascul|homem|male|^m$/i.test(p.gender) : false;
+      const pronoun = isFemale ? 'ela' : isMale ? 'ele' : 'a pessoa';
+      const treatment = isFemale ? 'a' : isMale ? 'o' : 'o(a)';
+      const roleLabel = p.roleTitle || (p.userType === 'employee' ? 'colaborador' : p.userType);
+
+      userIdentityBlock = [
+        `\n## Usuario atual`,
+        `Nome: ${p.fullName} (primeiro nome: ${p.firstName})`,
+        `Cargo: ${roleLabel}`,
+        `Pronome: ${pronoun}, tratamento: ${treatment}`,
+        `REGRAS DE TRATAMENTO:`,
+        `- Use o primeiro nome OCASIONALMENTE (1 a cada 3-4 mensagens), nao em toda resposta`,
+        `- Use pronomes corretos (${pronoun}/${treatment}) quando se referir ao usuario`,
+        `- Na PRIMEIRA mensagem de uma sessao, cumprimente pelo nome`,
+        `- No restante, seja natural — como um colega que ja conhece a pessoa`,
+      ].join('\n');
+    }
+
+    // Load cross-session memory (last 3 conversation summaries)
+    let memoryBlock = '';
+    try {
+      const { rows: recentConvos } = await client.query(
+        `SELECT title, context_summary, last_message_at
+         FROM orch_admin_conversation
+         WHERE user_id = $1 AND tenant_id = $2 AND id != $3
+           AND context_summary IS NOT NULL AND context_summary != ''
+           AND status != 'archived'
+         ORDER BY last_message_at DESC NULLS LAST
+         LIMIT 3`,
+        [validated.userId, validated.tenantId, sessionId]
+      );
+      if (recentConvos.length > 0) {
+        const summaries = recentConvos.map((r: any) => {
+          const ago = r.last_message_at ? this.timeAgo(new Date(r.last_message_at)) : 'recentemente';
+          return `- ${ago}: ${r.context_summary}`;
+        });
+        memoryBlock = `\n## Conversas anteriores com este usuario\n${summaries.join('\n')}\nUse este contexto naturalmente — nao mencione que "lembrou" a menos que seja relevante.`;
+      }
+    } catch (err) {
+      console.warn('[orch_admin] Failed to load conversation memory:', err instanceof Error ? err.message : err);
+    }
 
     // Resolve institution name for personalized responses
     let institutionName = 'nossa instituicao';
@@ -132,7 +196,9 @@ class OrchAdminChat {
           [params.companyId]
         );
         if (rows[0]) institutionName = rows[0].display_name || rows[0].legal_name || institutionName;
-      } catch { /* fallback to generic */ }
+      } catch (err) {
+        console.warn('[orch_admin] Failed to resolve institution name:', err instanceof Error ? err.message : err);
+      }
     }
 
     // Build prompt
@@ -140,6 +206,8 @@ class OrchAdminChat {
 
     const systemPrompt = [
       ADMIN_SYSTEM_PROMPT,
+      userIdentityBlock,
+      memoryBlock,
       `\nInstituicao: ${institutionName}`,
       `Rota atual: ${validated.routeContext}`,
       contextBlock ? `\nContexto da base de conhecimento:\n${contextBlock}` : '',
@@ -166,6 +234,18 @@ class OrchAdminChat {
       `UPDATE orch_admin_conversation SET messages_count = messages_count + 2, last_message_at = NOW(), updated_at = NOW() WHERE id = $1`,
       [sessionId]
     );
+
+    // Generate conversation summary every 6 messages (background, non-blocking)
+    const updatedConvo = await client.query(
+      `SELECT messages_count FROM orch_admin_conversation WHERE id = $1`,
+      [sessionId]
+    );
+    const msgCount = updatedConvo.rows[0]?.messages_count ?? 0;
+    if (msgCount > 0 && msgCount % 6 === 0) {
+      this.generateSummary(client, sessionId).catch((err) =>
+        console.warn('[orch_admin] Summary generation failed:', err instanceof Error ? err.message : err)
+      );
+    }
 
     return {
       sessionId,
@@ -211,7 +291,7 @@ class OrchAdminChat {
 
   private detectIntent(message: string): AdminIntent {
     const lower = message.toLowerCase();
-    if (/passo.a.passo|tutorial|guia|como fa[zç]o|walkthrough/i.test(lower)) return 'walkthrough';
+    if (/passo.a.passo|tutorial|guia|como fa[czç]o|walkthrough/i.test(lower)) return 'walkthrough';
     if (/preenche|preencher|coloca.*campo|fill/i.test(lower)) return 'form_fill';
     if (/o que [eé]|explica|para que serve|significado/i.test(lower)) return 'explain';
     if (/como.*funciona|fluxo|processo|workflow/i.test(lower)) return 'workflow';
@@ -249,6 +329,51 @@ class OrchAdminChat {
       `INSERT INTO orch_admin_message (conversation_id, role, content) VALUES ($1, 'user', $2), ($1, 'assistant', $3)`,
       [sessionId, userMsg, assistantMsg]
     );
+  }
+
+  /**
+   * Generate a 2-3 sentence summary of the conversation so far.
+   * Stored in context_summary for cross-session memory.
+   */
+  private async generateSummary(client: PoolClient, sessionId: string): Promise<void> {
+    const { rows } = await client.query(
+      `SELECT role, content FROM orch_admin_message
+       WHERE conversation_id = $1
+       ORDER BY created_at ASC LIMIT 20`,
+      [sessionId]
+    );
+    if (rows.length < 4) return;
+
+    const transcript = rows
+      .map((r: any) => `${r.role === 'user' ? 'Usuario' : 'Orch'}: ${r.content.slice(0, 200)}`)
+      .join('\n');
+
+    const summaryResponse = await orchLLMService.generateResponse(
+      'Resuma esta conversa em 2-3 frases curtas em portugues. Foque nos TEMAS e DADOS que o usuario consultou. Nao inclua saudacoes. Formato: texto corrido, sem bullets.',
+      [{ role: 'user', content: transcript }],
+      {}
+    );
+
+    const summary = summaryResponse.text.slice(0, 500);
+    await client.query(
+      `UPDATE orch_admin_conversation SET context_summary = $1, updated_at = NOW() WHERE id = $2`,
+      [summary, sessionId]
+    );
+  }
+
+  /** Human-readable relative time in Portuguese. */
+  private timeAgo(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60_000);
+    const diffHours = Math.floor(diffMs / 3_600_000);
+    const diffDays = Math.floor(diffMs / 86_400_000);
+
+    if (diffMin < 60) return `ha ${diffMin} minutos`;
+    if (diffHours < 24) return `ha ${diffHours} horas`;
+    if (diffDays === 1) return 'ontem';
+    if (diffDays < 7) return `ha ${diffDays} dias`;
+    return `ha ${Math.floor(diffDays / 7)} semanas`;
   }
 }
 

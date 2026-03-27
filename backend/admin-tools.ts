@@ -6,6 +6,138 @@ import { sanitizeSearchInput, truncateResult } from './tool-utils';
 import type { OrchToolContext } from './types';
 import { TOOL_LIMITS } from './types';
 
+/**
+ * Schema reference for the queryData tool.
+ * Only tables safe for admin read access. Sensitive columns excluded.
+ * The LLM uses this to write correct SELECT queries.
+ */
+const QUERYABLE_SCHEMA = `
+## Tabelas disponíveis (PostgreSQL). Use aspas duplas em "user".
+
+### "user" — Usuarios do sistema
+Colunas: id (uuid PK), tenant_id (uuid), full_name (text), social_name (text), gender (text), email (text), user_type (text: student|employee|guardian), status (text: ingresso|egresso|evadido|trancado), birth_date (date), role_title (text), photo_url (text), last_login_at (timestamptz), active_since (timestamptz), created_at (timestamptz), deleted_at (timestamptz)
+
+### user_company — Vinculo usuario-instituicao
+Colunas: tenant_id (uuid), user_id (uuid FK->user.id), company_id (uuid FK->company.id), relationship_type (text)
+
+### company — Instituicoes/organizacoes
+Colunas: id (uuid PK), tenant_id (uuid), legal_name (text), display_name (text), parent_id (uuid FK->company.id), institutional_type (text), group_type (text), created_at (timestamptz)
+
+### collection — Cursos
+Colunas: id (uuid PK), tenant_id (uuid), company_id (uuid), title (text), description (text), status (text: draft|published|archived), workload_hours (int), is_offerable (bool), created_at (timestamptz), deleted_at (timestamptz)
+
+### pathway — Trilhas dentro de um curso
+Colunas: id (uuid PK), tenant_id (uuid), collection_id (uuid FK->collection.id), company_id (uuid), title (text), sequence_order (int), status (text), deleted_at (timestamptz)
+
+### series — Disciplinas dentro de uma trilha
+Colunas: id (uuid PK), tenant_id (uuid), pathway_id (uuid FK->pathway.id), company_id (uuid), title (text), code (text), workload_hours (numeric), requirement_type (text), status (text), professor_id (uuid FK->user.id), deleted_at (timestamptz)
+
+### unit — Unidades dentro de uma disciplina
+Colunas: id (uuid PK), tenant_id (uuid), series_id (uuid FK->series.id), company_id (uuid), title (text), sequence_order (int), estimated_duration_minutes (int), deleted_at (timestamptz)
+
+### component — Componentes/aulas dentro de uma unidade
+Colunas: id (uuid PK), tenant_id (uuid), unit_id (uuid FK->unit.id), company_id (uuid), component_type (text: video|quiz|ai_tutor|assignment|text|discussion|conference), title (text), estimated_duration_minutes (int), is_required (bool), sequence_order (int), deleted_at (timestamptz)
+
+### class_instance — Turmas
+Colunas: id (uuid PK), tenant_id (uuid), company_id (uuid), name (varchar), code (varchar), content_type (varchar: collection|series), content_id (uuid), status (varchar: active|inactive|completed), max_students (int), start_date (date), end_date (date), enrolled_students_count (int), engagement_score (int), churn_rate (numeric), delivery_mode (varchar), deleted_at (timestamptz)
+
+### class_enrollment — Matriculas
+Colunas: id (uuid PK), tenant_id (uuid), company_id (uuid), user_id (uuid FK->user.id), class_instance_id (uuid FK->class_instance.id), enrollment_date (date), status (varchar: enrolled|completed|dropped), completion_date (date), final_grade (numeric)
+
+### attendance_calculation — Calculo de presenca por aluno/turma
+Colunas: id (uuid PK), tenant_id (uuid), user_id (uuid FK->user.id), class_instance_id (uuid FK->class_instance.id), total_sessions (int), attended_sessions (int), absent_sessions (int), weighted_attendance_percentage (numeric), is_at_risk (bool), risk_level (varchar: low|medium|high|critical), min_required_percentage (numeric)
+
+### assessment_attempt — Tentativas de avaliacao
+Colunas: id (uuid PK), tenant_id (uuid), company_id (uuid), component_id (uuid FK->component.id), student_user_id (uuid FK->user.id), attempt_number (int), started_at (timestamptz), submitted_at (timestamptz), score (numeric), max_score (numeric), status (text: started|submitted|graded), type (text), percentage_correct (numeric)
+
+### student_progress — Progresso do aluno por componente
+Colunas: id (uuid PK), tenant_id (uuid), user_id (uuid FK->user.id), company_id (uuid), collection_id (uuid), pathway_id (uuid), series_id (uuid), unit_id (uuid), component_id (uuid), class_enrollment_id (uuid), status (text: not_started|in_progress|completed), progress_percentage (numeric), started_at (timestamptz), completed_at (timestamptz), time_spent_minutes (int), score (numeric), max_score (numeric), attempts_count (int)
+
+### experience_events — Eventos xAPI (atividade do aluno)
+Colunas: id (uuid PK), tenant_id (uuid), actor_id (uuid FK->user.id), company_id (uuid), verb (varchar: completed|started|interacted|paused|blurred), object_type (varchar: video|quiz|ai_tutor|system|discussion|assignment), object_id (varchar), result_score (numeric), result_success (bool), result_duration (int), timestamp (timestamptz)
+
+### admin_entity_metrics — Metricas BI agregadas
+Colunas: id (uuid PK), tenant_id (uuid), company_id (uuid), actor_id (uuid), metric_key (varchar), metric_value (numeric), period_type (varchar: daily|weekly|monthly|total), period_start (timestamptz), period_end (timestamptz)
+
+### conversation — Conversas (mensageria)
+Colunas: id (uuid PK), tenant_id (uuid), sender_id (uuid FK->user.id), destination_id (uuid), destination_type (text: user|class)
+
+### conversation_message — Mensagens
+Colunas: id (uuid PK), conversation_id (uuid FK->conversation.id), sender_id (uuid FK->user.id), content (text), created_at (timestamptz)
+
+### admission — Processos seletivos
+Colunas: id (uuid PK), tenant_id (uuid), company_id (uuid), title (text), status (text), start_date (timestamptz), end_date (timestamptz), max_candidates (int), created_at (timestamptz)
+
+### admission_candidate — Candidatos
+Colunas: id (uuid PK), tenant_id (uuid), admission_id (uuid FK->admission.id), user_id (uuid FK->user.id), full_name (text), email (text), status (text), score (numeric), created_at (timestamptz)
+
+## Relacoes principais
+- user -> user_company -> company (usuario pertence a instituicao)
+- collection -> pathway -> series -> unit -> component (hierarquia de curso)
+- class_instance -> class_enrollment -> user (turma -> matricula -> aluno)
+- class_enrollment + attendance_calculation (presenca)
+- component -> assessment_attempt (avaliacoes)
+- user -> student_progress -> component (progresso)
+- user -> experience_events (atividade xAPI)
+
+## REGRAS SQL OBRIGATORIAS
+- $1 = tenant_id (uuid), $2 = accessibleCompanyIds (uuid[])
+- TODA query DEVE ter: WHERE ... tenant_id = $1
+- Tabelas com company_id DEVEM ter: AND company_id = ANY($2::uuid[])
+- Tabelas sem company_id: usar JOIN com user_company para filtrar
+- "user" DEVE estar entre aspas duplas (palavra reservada)
+- Use COALESCE para NULLs em agregacoes
+- LIMIT 50 maximo
+- Apenas SELECT. Nenhum INSERT/UPDATE/DELETE/DROP/ALTER/CREATE.
+`;
+
+const ALLOWED_TABLES = new Set([
+  'user', 'user_company', 'company', 'collection', 'pathway', 'series', 'unit', 'component',
+  'class_instance', 'class_enrollment', 'attendance_calculation', 'assessment_attempt',
+  'student_progress', 'experience_events', 'experience_metrics_aggregated',
+  'admin_entity_metrics', 'conversation', 'conversation_message',
+  'admission', 'admission_candidate', 'company_event', 'certificate',
+  'attendance_record', 'attendance_justification', 'attendance_rule',
+  'community_space', 'community_post', 'discussion_topic', 'topic_reply',
+]);
+
+/** Validates that a SQL string is safe for read-only execution. */
+function validateQuerySafety(sql: string): { safe: boolean; reason?: string } {
+  const upper = sql.toUpperCase().replace(/\s+/g, ' ').trim();
+
+  // Must be a SELECT
+  if (!upper.startsWith('SELECT')) {
+    return { safe: false, reason: 'Query deve comecar com SELECT' };
+  }
+
+  // Block dangerous keywords
+  const blocked = ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'CREATE', 'TRUNCATE', 'GRANT', 'REVOKE', 'COPY', 'EXECUTE', 'CALL'];
+  for (const kw of blocked) {
+    // Match as whole word (not inside column names like "updated_at")
+    const regex = new RegExp(`\\b${kw}\\b(?!_)`, 'i');
+    if (regex.test(sql)) {
+      return { safe: false, reason: `Keyword proibida: ${kw}` };
+    }
+  }
+
+  // Block system table access
+  if (/\b(pg_catalog|information_schema|pg_)\b/i.test(sql)) {
+    return { safe: false, reason: 'Acesso a tabelas de sistema proibido' };
+  }
+
+  // Block comments and semicolons (multi-statement)
+  if (/--|\/\*|;/.test(sql)) {
+    return { safe: false, reason: 'Comentarios e multi-statements proibidos' };
+  }
+
+  // Must reference $1 (tenant_id)
+  if (!sql.includes('$1')) {
+    return { safe: false, reason: 'Query deve filtrar por tenant_id ($1)' };
+  }
+
+  return { safe: true };
+}
+
 type SecureTool = <P extends z.ZodType>(
   ctx: OrchToolContext,
   definition: {
@@ -545,9 +677,10 @@ export function createAdminTools(
       execute: async (params, client) => {
         const conditions: string[] = [
           'ee.tenant_id = $1',
-          `ee.timestamp >= NOW() - INTERVAL '1 hour' * $2`,
+          'ee.actor_id IN (SELECT uc2.user_id FROM user_company uc2 WHERE uc2.company_id = ANY($2::uuid[]))',
+          `ee.timestamp >= NOW() - INTERVAL '1 hour' * $3`,
         ];
-        const queryParams: unknown[] = [ctx.tenantId, params.hoursAgo];
+        const queryParams: unknown[] = [ctx.tenantId, ctx.accessibleCompanyIds, params.hoursAgo];
 
         if (params.studentName) {
           queryParams.push(`%${sanitizeSearchInput(params.studentName)}%`);
@@ -725,6 +858,72 @@ export function createAdminTools(
                 classConversations: 0,
               })),
         });
+      },
+    }),
+
+    queryData: secure(ctx, {
+      description: `Ferramenta flexivel para consultar QUALQUER dado do sistema via SQL.
+Use quando NENHUMA outra ferramenta atende a pergunta, ou quando o admin pedir correlacoes, rankings, comparacoes, ou cruzamentos entre dados.
+Exemplos: "qual aluno tem mais faltas?", "correlacao entre presenca e nota", "turmas com evasao acima de 20%", "evolucao de matriculas por mes".
+Voce DEVE gerar um SELECT valido seguindo o schema e regras abaixo.
+${QUERYABLE_SCHEMA}`,
+      requiredRole: 'admin',
+      parameters: z.object({
+        sql: z
+          .string()
+          .max(2000)
+          .describe(
+            'Query SELECT PostgreSQL. DEVE usar $1 para tenant_id e $2 para accessibleCompanyIds (uuid[]). LIMIT 50 max. Apenas SELECT.'
+          ),
+        explanation: z
+          .string()
+          .max(300)
+          .describe('Explicacao curta do que a query faz (para auditoria)'),
+      }),
+      execute: async (params, client) => {
+        // Validate safety
+        const validation = validateQuerySafety(params.sql);
+        if (!validation.safe) {
+          return { error: `Query rejeitada: ${validation.reason}` };
+        }
+
+        // Force LIMIT if not present
+        let sql = params.sql.trim();
+        if (!/\bLIMIT\b/i.test(sql)) {
+          sql += ' LIMIT 50';
+        }
+
+        // Enforce max LIMIT 50
+        const limitMatch = sql.match(/\bLIMIT\s+(\d+)/i);
+        if (limitMatch && Number(limitMatch[1]) > 50) {
+          sql = sql.replace(/\bLIMIT\s+\d+/i, 'LIMIT 50');
+        }
+
+        try {
+          const result = await client.query(sql, [ctx.tenantId, ctx.accessibleCompanyIds]);
+
+          // Log for audit trail
+          console.log(
+            `[orch_queryData] user=${ctx.userId} explanation="${params.explanation}" rows=${result.rowCount}`
+          );
+
+          return truncateResult({
+            rowCount: result.rowCount,
+            rows: result.rows,
+          });
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'unknown';
+          console.warn(`[orch_queryData] SQL error: ${msg}\nSQL: ${params.sql}`);
+
+          // Return friendly error without leaking internals
+          if (msg.includes('does not exist')) {
+            return { error: 'Tabela ou coluna nao encontrada. Verifique os nomes.' };
+          }
+          if (msg.includes('statement timeout') || msg.includes('canceling statement')) {
+            return { error: 'Query muito pesada. Tente com filtros mais especificos ou LIMIT menor.' };
+          }
+          return { error: 'Erro ao executar a consulta. Tente reformular a pergunta.' };
+        }
       },
     }),
   };
